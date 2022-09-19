@@ -14,11 +14,11 @@ var Module = {
     }
 };
 
-let accessToken = 'ANONYMOUS';
+// let accessToken = 'ANONYMOUS';
 XMLHttpRequest.prototype._open = XMLHttpRequest.prototype.open;
 XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
-  this._open(method, url, async, user, password);
-  this.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+  // this._open(method, url, async, user, password);
+  // this.setRequestHeader('Authorization', `Bearer ${accessToken}`);
 }
 importScripts('https://unpkg.com/wasm-git@0.0.2/lg2.js');
 

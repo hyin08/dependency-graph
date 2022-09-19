@@ -16,21 +16,21 @@
             <el-button class="button" type="text" @click="getPackageInfo"
               >点击获取npm包信息
             </el-button>
+           
+          </div>
+          <div class="box-card">
+            <span></span>
             <el-button class="button" @click="extractTgz"
               >下载tgz文件
             </el-button>
           </div>
-          <input type="file" id="file" />
-          <el-input
-            v-model="git_url"
-            placeholder="Please input git address"
-          >
-            <template #prepend>git:</template>
-          </el-input>
 
-          <el-button class="button" type="text" @click="cloneGitLib"
-            >Clone
-          </el-button>
+          <div class="card-header">
+            <el-input v-model="git_url" placeholder="Please input git address">
+              <template #prepend>git:</template>
+            </el-input>
+            <el-button class="button" @click="cloneGitLib">Clone </el-button>
+          </div>
         </template>
         <div class="info-list-box" v-loading="loading">
           <div class="text item" v-if="packageInfo?.name">
@@ -208,6 +208,8 @@ export default defineComponent({
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 20px;
+      margin-top: 20px;
     }
 
     .box-card {
