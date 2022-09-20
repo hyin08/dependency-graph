@@ -1,7 +1,7 @@
 import Axios, { type AxiosInstance } from 'axios'
 import { ElMessage } from 'element-plus'
 
-const baseURL = 'https://unpkg.com/'
+const baseURL = ''
 
 const axios: AxiosInstance = Axios.create({
   baseURL,
