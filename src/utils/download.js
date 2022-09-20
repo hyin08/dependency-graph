@@ -1,3 +1,5 @@
+import axios from "axios";
+
 function downloadUnpkg(packageName, version) {
     let url = `https://unpkg.com/${packageName}`;
     if (version) {
@@ -18,7 +20,21 @@ function downloadHttp(packageName, url) {
     // return fetch(targetUrl).then((response) => response.json());
 }
 
+async function downloadVersions(packageName) {
+    const url = `https://registry.npmjs.org/${packageName}`;
+    return axios.get(url)
+      .then(res => {
+          if(res.data) {
+              return {data: res.data.versions, error: null}
+          }
+      })
+      .catch(error => {
+          return {data: null, error: error.message}
+      })
+}
+
 export {
     downloadUnpkg,
-    downloadHttp
+    downloadHttp,
+    downloadVersions
 }
