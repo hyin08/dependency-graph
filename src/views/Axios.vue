@@ -16,7 +16,6 @@
             <el-button class="button" type="text" @click="getPackageInfo"
               >点击获取npm包信息
             </el-button>
-           
           </div>
           <div class="box-card">
             <span></span>
@@ -29,7 +28,7 @@
             <el-input v-model="git_url" placeholder="Please input git address">
               <template #prepend>git:</template>
             </el-input>
-            <el-button class="button" @click="cloneGitLib">Clone </el-button>
+            <el-button class="button" @click="cloneGitLib2">Clone </el-button>
           </div>
         </template>
         <div class="info-list-box" v-loading="loading">
@@ -55,6 +54,14 @@ import cacheDB from '../utils/cacheFile'
 
 import { Archive } from 'libarchive.js/main.js'
 
+// import { getRemoteInfo } from 'isomorphic-git'
+// import http from 'isomorphic-git/http/web'
+import http from 'https://unpkg.com/isomorphic-git@beta/http/web/index.js'
+import FS from '@isomorphic-git/lightning-fs'
+// const fs = new LightningFS('fs')
+
+// const dir = '/test-clone'
+
 Archive.init({
   workerUrl: './dist/worker-bundle.js',
 })
@@ -76,17 +83,9 @@ export default defineComponent({
     const loading = ref(false)
     const cache = new cacheDB(() => {})
 
-    onMounted(() => {
-      document.getElementById('file').addEventListener('change', async (e) => {
-        const file = e.currentTarget.files[0]
-
-        const archive = await Archive.open(file)
-        let obj = await archive.extractFiles()
-
-        console.log(obj)
-      })
-    })
-
+    const fs = new FS('testfs')
+    
+    // 使用 wasm-git库获取
     const cloneGitLib = () => {
       worker.postMessage({
         command: 'clone',
@@ -108,6 +107,55 @@ export default defineComponent({
           loading.value = false
           console.error(error)
         })
+    }
+
+    // 使用 isomorphic-git 库获取
+    const cloneGitLib2 = async () => {
+      // console.log(`Using isomorphic-git version: ${git.version()}`)
+
+      // window.git
+      //   .getRemoteInfo({
+      //     http,
+      //     url: git_url.value,
+      //   })
+      //   .then((data) => {
+      //     if (data && data.refs && data.refs.heads) {
+      //       console.log('List of remote branches')
+      //       console.log(Object.keys(data.refs.heads))
+      //     }
+      //   })
+
+      var s = git_url.value      
+      const dir = s.substr(s.lastIndexOf('\/'), s.length-s.lastIndexOf('\/')).replaceAll('-', '_')
+      console.log("url:", git_url.value, "proj=", dir)
+      // const dir2='/empty_react_project'   
+      await window.git
+        .clone({
+          fs,
+          http,
+          dir,
+          // url: 'https://github.com/isomorphic-git/lightning-fs',
+          url: git_url.value,
+          corsProxy: 'https://cors.isomorphic-git.org',
+        })
+        .then(console.log)
+
+      fs.readdir(dir, (err, files) => {
+        if (err) console.log(err)
+        else {
+          console.log('\nCurrent directory filenames:')
+          File.forEach((file) => {
+            console.log(file)
+          })
+        }
+      })
+      fs.readFile(`${dir}/package.json`, 'utf8', (err, data) => {
+        if (err) console.log(err)
+        else {
+          console.log('\nCurrent file:')
+          console.log(data)
+        }
+      })
     }
 
     const downloadFile = () => {
@@ -159,9 +207,16 @@ export default defineComponent({
           })
 
           const archive = await Archive.open(file)
-          let obj = await archive.extractFiles()
+          // let obj = await archive.extractFiles()
+          // console.log(obj)
 
-          console.log(obj)
+          const filesObj = await archive.getFilesObject()
+          const package_file = await filesObj['package']['package.json']
+          console.log(package_file)
+          const ex_file = await package_file.extract()
+          console.log(ex_file)
+          const package_info = await ex_file.text()
+          console.log(package_info)
 
           loading.value = false
         })
@@ -180,6 +235,7 @@ export default defineComponent({
       downloadFile,
       extractTgz,
       cloneGitLib,
+      cloneGitLib2,
     }
   },
 })
