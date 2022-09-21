@@ -1,55 +1,54 @@
 <template>
-  <div class="axios-container page-container">
-    <div class="page-title">Npm Package Info Page</div>
-    <div class="user-info-container">
-      <el-card class="box-card">
-        <template #header>
-          <div class="card-header">
-            <el-input
-              v-model="input1"
-              placeholder="Please input"
-              @change="getPackageInfo"
-            >
-              <template #prepend>Npm：</template>
-            </el-input>
+  <div>
+    <el-container>
+      <el-aside width="400px"
+        ><nav>
+          <PackageVersions @show-version-info="showVersionInfo" />
+          <!-- <RouterLink to="/axios">Axios</RouterLink> -->
+        </nav></el-aside
+      >
+      <el-main>
+        <div v-if="versionInfo" class="axios-container page-container">
+          <div class="user-info-container">
+            <el-card class="box-card">
+              <template #header>
+                <div class="card-title">{{versionInfo?.name + '@' + versionInfo?.version}}</div>
+                <div class="card-header">
+                  <el-button class="button" @click="getPackageInfo"
+                    >生成dependency graph
+                  </el-button>
 
-            <el-button class="button" type="text" @click="getPackageInfo"
-              >点击获取npm包信息
-            </el-button>
-          </div>
-          <div class="box-card">
-            <span></span>
-            <el-button class="button" @click="extractTgz"
-              >下载tgz文件
-            </el-button>
-          </div>
+                  <el-button class="button" @click="extractTgz"
+                    >下载tgz文件
+                  </el-button>
+                </div>
 
-          <div class="card-header">
-            <el-input v-model="git_url" placeholder="Please input git address">
-              <template #prepend>git:</template>
-            </el-input>
-            <el-button class="button" @click="cloneGitLib2">Clone </el-button>
+                <div class="card-header">
+                  <el-input
+                    v-model="git_url"
+                    placeholder="Please input git address"
+                  >
+                    <template #prepend>git:</template>
+                  </el-input>
+                  <el-button class="button" @click="cloneGitLib2"
+                    >Clone
+                  </el-button>
+                </div>
+              </template>
+              <div class="info-list-box" v-loading="loading">
+                <div class="text item">dependencies:</div>
+                <!-- <ul>
+                  <li v-for="(value, key) in packageInfo" :key="key">
+                    {{ key }}: {{ value }}
+                  </li>
+                </ul> -->
+                <DependencyTree :data="treeData"/>
+              </div>
+            </el-card>
           </div>
-        </template>
-        <div class="info-list-box" v-loading="loading">
-          <div class="text item">dependencies:</div>
-          <ul>
-            <li v-for="(value, key) in packageInfo" :key="key">
-              {{ key }}: {{ value }}
-            </li>
-          </ul>
-          <!-- <div class="text item" v-if="packageInfo?.name">
-            name: {{ packageInfo?.name }}
-          </div>
-          <div class="text item" v-if="packageInfo?.version">
-            version: {{ packageInfo?.version }}
-          </div>
-          <div class="text item" v-if="packageInfo?.dependencies">
-            dependencies: {{ packageInfo?.dependencies }}
-          </div> -->
         </div>
-      </el-card>
-    </div>
+      </el-main>
+    </el-container>
   </div>
 </template>
 
@@ -57,6 +56,7 @@
 import { defineComponent, ref, type Ref, onMounted } from 'vue'
 import axios from '../utils/axios'
 import { downloadUnpkg, downloadHttp } from '../utils/download'
+import { formatDependencyMap } from '../utils/data-formatter'
 import cacheDB from '../utils/cacheFile'
 
 import { Archive } from 'libarchive.js/main.js'
@@ -88,6 +88,15 @@ export default defineComponent({
     const git_url = ref('https://wasm-git.petersalomonsen.com/test')
     const packageInfo: Ref = ref(null)
     const loading = ref(false)
+    const versionInfo = ref(null)
+    const treeData = ref([]);
+    const showVersionInfo = (version) => {
+      versionInfo.value = version
+      packageInfo.value = null
+      treeData.value = []
+      console.log(versionInfo.value);
+    }
+
     const cache = new cacheDB(() => {})
 
     const fs = new FS('testfs')
@@ -185,15 +194,17 @@ export default defineComponent({
 
     const extractTgz = () => {
       loading.value = true
+      let tgz = versionInfo.value.dist.tarball
+
       // 写入cache
-      cache.cacheModel('https://registry.npmjs.org/vue/-/vue-3.2.39.tgz')
+      cache.cacheModel(tgz)
       axios
-        .get('https://registry.npmjs.org/vue/-/vue-3.2.39.tgz', {
+        .get(tgz, {
           responseType: 'blob',
         })
         .then(async (response) => {
           console.log('response: ', response.data)
-          const file = new window.File([response.data], 'vue-3.2.39.tgz', {
+          const file = new window.File([response.data], tgz.split('/').at(-1), {
             type: 'application/x-compressed',
           })
 
@@ -224,13 +235,13 @@ export default defineComponent({
     let requests = new Set();
     
     const getPackageInfo = () => {
-
+      debugger;
       packages = {};
       requests = new Set();
 
       loading.value = true
       console.log('user input', input1.value)
-      run({ packageName: input1.value })
+      run({ packageName: versionInfo.value.name, version: versionInfo.value.version })
       // axios
       //   .get(input1.value + '/package.json')
       //   .then((response) => {
@@ -302,6 +313,8 @@ export default defineComponent({
       if (requests.size === 0) {
         loading.value = false
         packageInfo.value = packages
+        treeData.value = formatDependencyMap(packages)
+        console.log('treeData: ', treeData.value);
         console.log(packages)
       }
     }
@@ -325,6 +338,9 @@ export default defineComponent({
       extractTgz,
       cloneGitLib,
       cloneGitLib2,
+      versionInfo,
+      showVersionInfo,
+      treeData,
     }
   },
 })
@@ -349,6 +365,10 @@ export default defineComponent({
       }
     }
 
+    .card-title {
+      font-size: 20px;
+      font-weight: bold;
+    }
     .card-header {
       display: flex;
       justify-content: space-between;
