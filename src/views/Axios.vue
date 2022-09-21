@@ -18,7 +18,7 @@
                     >生成dependency graph
                   </el-button>
 
-                  <el-button class="button" @click="extractTgz"
+                  <el-button class="button" @click="() => extractTgz('https://registry.npmjs.org/vue/-/vue-3.2.28.tgz')"
                     >下载tgz文件
                   </el-button>
                 </div>
@@ -192,13 +192,13 @@ export default defineComponent({
         })
     }
 
-    const extractTgz = () => {
-      loading.value = true
-      let tgz = versionInfo.value.dist.tarball
+    const extractTgz = (tgz) => {
+      // loading.value = true
+      // let tgz = versionInfo.value.dist.tarball
 
       // 写入cache
       cache.cacheModel(tgz)
-      axios
+      return axios
         .get(tgz, {
           responseType: 'blob',
         })
@@ -219,11 +219,12 @@ export default defineComponent({
           console.log(ex_file)
           const package_info = await ex_file.text()
           console.log(package_info)
-
-          loading.value = false
+          return {data: JSON.parse(package_info), error: null}
+          // loading.value = false
         })
         .catch((error) => {
-          loading.value = false
+          // loading.value = false
+          return {data: null, error: error.message}
           console.error(error)
         })
     }
@@ -263,7 +264,7 @@ export default defineComponent({
       requests.add(key);
       // TODO: 确定是用 downloadHttp 还是 downloadUnpkg
       const type = extractType(pkg);
-      if(type === 'https') {
+      if(type === 'http') {
         axios.get(downloadHttp(pkg.packageName, pkg.version))
           .then((response) => {
             if (response.data) {
@@ -289,12 +290,27 @@ export default defineComponent({
               packageInfo.value = null
               console.error(error)
           });
+      } else if(type === 'tgz') {
+        const {data, error} = await extractTgz(pkg.version)
+        if(error) {
+          loading.value = false
+          packageInfo.value = null
+          console.log(error);
+        } else {
+          next(pkg, data)
+        }
+      } else if(type === 'git') {
+        // Todo: use cloneGitLib2
       }
     }
 
     const extractType = pkg => {
-      if(pkg.version?.match(/(^https|^git|^git\+https|^git\+ssh)\:\/\//)) {
-        return 'https'
+      if(pkg.version?.match(/(^git|^git\+https|^git\+ssh)\:\/\//)) {
+        return 'git'
+      } else if(pkg.version?.match(/\.tgz$/)) {
+        return 'tgz'
+      } else if(pkg.version?.match(/(?<owner>[\w.-]+)\/(?<name>[\w.-]+)/)) {
+         return 'http'
       } else {
         return 'semver'
       }
