@@ -5,7 +5,6 @@ const formatDependencyMap = (data, rootLabel) => {
     let childrenMap = {}
 
     function getChildren(label) {
-        debugger;
         if(childrenMap[label]) return childrenMap[label];
         let result = []
         for (let item in dataByObj[label].dependencies) {

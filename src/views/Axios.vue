@@ -85,7 +85,7 @@ export default defineComponent({
 
   setup() {
     const input1 = ref('')
-    const git_url = ref('https://wasm-git.petersalomonsen.com/test')
+    const git_url = ref('https://github.com/vuejs/core.git')
     const packageInfo: Ref = ref(null)
     const loading = ref(false)
     const versionInfo = ref(null)
@@ -235,7 +235,6 @@ export default defineComponent({
     let requests = new Set();
     
     const getPackageInfo = () => {
-      debugger;
       packages = {};
       requests = new Set();
 
