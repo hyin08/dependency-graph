@@ -1,40 +1,24 @@
-const formatDependencyMap = (data) => {
+const formatDependencyMap = (data, rootLabel) => {
     let dataByObj = JSON.parse(JSON.stringify(data))
+    // 建立root
+    let root = {}
+    let childrenMap = {}
 
-
-    function getChildren(obje) {
+    function getChildren(label) {
+        debugger;
+        if(childrenMap[label]) return childrenMap[label];
         let result = []
-        for (let item in obje) {
-            result.push({ "label": item + '@' + obje[item]})
+        for (let item in dataByObj[label].dependencies) {
+            let l = item + '@' + dataByObj[label].dependencies[item]
+            result.push({ "label": l, "children": getChildren(l)})
         }
+        childrenMap[label] = result
         return result
     }
 
-    // 建立root
-    let root = {}
-    for (let item in dataByObj) {
-        root["label"] = item
-        // console.log(dataByObj[item].dependencies)
-        root["children"] = getChildren(dataByObj[item].dependencies)
-        // console.log(root)
-        break;
-    }
+    root['label'] = rootLabel;
+    root['children'] = getChildren(rootLabel)
 
-    // 建立完整的树
-    for (let item in dataByObj) {
-        if (item === root.label) {
-            continue;
-        }
-        let existed_item = root.children.find(element => element.label === item)
-        if (existed_item) {
-            existed_item["children"] = getChildren(dataByObj[item].dependencies)
-        } else {
-            root.children.push({
-                "label": item,
-                "children": getChildren(dataByObj[item].dependencies)
-            })
-        }
-    }
     return new Array(root);
 }
 

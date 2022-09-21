@@ -313,7 +313,7 @@ export default defineComponent({
       if (requests.size === 0) {
         loading.value = false
         packageInfo.value = packages
-        treeData.value = formatDependencyMap(packages)
+        treeData.value = formatDependencyMap(packages, versionInfo.value.name + '@' + versionInfo.value.version)
         console.log('treeData: ', treeData.value);
         console.log(packages)
       }
