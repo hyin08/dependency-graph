@@ -309,7 +309,7 @@ export default defineComponent({
         return 'git'
       } else if(pkg.version?.match(/\.tgz$/)) {
         return 'tgz'
-      } else if(pkg.version?.match(/(?<owner>[\w.-]+)\/(?<name>[\w.-]+)/)) {
+      } else if(pkg.version?.match(/(?<owner>[\w.-]+)\/(?<name>[\w.-]+)$/)) {
          return 'http'
       } else {
         return 'semver'

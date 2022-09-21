@@ -12,7 +12,7 @@ function downloadUnpkg(packageName, version) {
 
 function downloadHttp(packageName, url) {
     const match = url.match(
-        /^(git\+)?https?:\/\/(www\.)?github.com\/(?<owner>[\w.-]+)\/(?<name>[\w.-]+)/
+        /(?<owner>[\w.-]+)\/(?<name>[\w.-]+)$/
     );
     if (!match) return Promise.resolve();
     const targetUrl = `https://api.github.com/repos/${match.groups.owner}/${match.groups.name}/contents/package.json`;
